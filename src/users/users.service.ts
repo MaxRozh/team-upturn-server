@@ -6,13 +6,14 @@ import { MongoError } from 'mongodb';
 import { createTransport, SendMailOptions } from 'nodemailer';
 
 import { UserDocument, UserModel } from './schemas/user.schema';
+import { User } from './models/users.model';
 import { ConfigService } from '../config/config.service';
 import { AuthService } from '../auth/auth.service';
 
 @Injectable()
 export class UsersService {
   constructor(
-    @InjectModel('User') private readonly userModel: Model<UserDocument>,
+    @InjectModel('User') private readonly userModel: Model<User>,
     private configService: ConfigService,
     private authService: AuthService,
   ) {}
@@ -34,19 +35,19 @@ export class UsersService {
    *
    * @param {string} permission The permission to add to the user
    * @param {string} username The user's username
-   * @returns {(Promise<UserDocument | undefined>)} The user Document with the updated permission. Undefined if the
+   * @returns {(Promise<User | undefined>)} The user Document with the updated permission. Undefined if the
    * user does not exist
    * @memberof UsersService
    */
   async addPermission(
     permission: string,
     username: string,
-  ): Promise<UserDocument | undefined> {
+  ): Promise<User | undefined> {
     const user = await this.findOneByUsername(username);
     if (!user) return undefined;
     if (user.permissions.includes(permission)) return user;
     user.permissions.push(permission);
-    await user.save();
+    // await user.save();
     return user;
   }
 
@@ -55,19 +56,19 @@ export class UsersService {
    *
    * @param {string} permission The permission to remove from the user
    * @param {string} username The username of the user to remove the permission from
-   * @returns {(Promise<UserDocument | undefined>)} Returns undefined if the user does not exist
+   * @returns {(Promise<User | undefined>)} Returns undefined if the user does not exist
    * @memberof UsersService
    */
   async removePermission(
     permission: string,
     username: string,
-  ): Promise<UserDocument | undefined> {
+  ): Promise<User | undefined> {
     const user = await this.findOneByUsername(username);
     if (!user) return undefined;
     user.permissions = user.permissions.filter(
       userPermission => userPermission !== permission,
     );
-    await user.save();
+    // await user.save();
     return user;
   }
 
@@ -79,13 +80,13 @@ export class UsersService {
    * @param {UpdateUserInput} fieldsToUpdate The user can update their username, email, password, or enabled. If
    * the username is updated, the user's token will no longer work. If the user disables their account, only an admin
    * can reenable it
-   * @returns {(Promise<UserDocument | undefined>)} Returns undefined if the user cannot be found
+   * @returns {(Promise<User | undefined>)} Returns undefined if the user cannot be found
    * @memberof UsersService
    */
   async update(
     username: string,
     fieldsToUpdate: any,
-  ): Promise<UserDocument | undefined> {
+  ): Promise<User | undefined> {
     if (fieldsToUpdate.username) {
       const duplicateUser = await this.findOneByUsername(
         fieldsToUpdate.username,
@@ -119,7 +120,7 @@ export class UsersService {
       }
     }
 
-    let user: UserDocument | undefined | null = null;
+    let user: User | undefined | null = null;
 
     if (Object.entries(fieldsToUpdate).length > 0) {
       // @ts-ignore
@@ -181,15 +182,15 @@ export class UsersService {
           return;
         }
 
-        user.passwordReset = {
-          token,
-          expiration,
-        };
+        // user.passwordReset = {
+        //   token,
+        //   expiration,
+        // };
 
-        user.save().then(
-          () => resolve(true),
-          () => resolve(false),
-        );
+        // user.save().then(
+        //   () => resolve(true),
+        //   () => resolve(false),
+        // );
       });
     });
   }
@@ -200,23 +201,23 @@ export class UsersService {
    * @param {string} username
    * @param {string} code the token set when the password reset email was sent out
    * @param {string} password the new password the user wants
-   * @returns {(Promise<UserDocument | undefined>)} Returns undefined if the code or the username is wrong
+   * @returns {(Promise<User | undefined>)} Returns undefined if the code or the username is wrong
    * @memberof UsersService
    */
   async resetPassword(
     username: string,
     code: string,
     password: string,
-  ): Promise<UserDocument | undefined> {
+  ): Promise<User | undefined> {
     const user = await this.findOneByUsername(username);
-    if (user && user.passwordReset && user.enabled !== false) {
-      if (user.passwordReset.token === code) {
-        user.password = password;
-        user.passwordReset = undefined;
-        await user.save();
-        return user;
-      }
-    }
+    // if (user && user.passwordReset && user.enabled !== false) {
+    //   if (user.passwordReset.token === code) {
+    //     user.password = password;
+    //     user.passwordReset = undefined;
+    //     await user.save();
+    //     return user;
+    //   }
+    // }
     return undefined;
   }
 
@@ -225,13 +226,13 @@ export class UsersService {
    *
    * @param {CreateUserInput} createUserInput username, email, and password. Username and email must be
    * unique, will throw an email with a description if either are duplicates
-   * @returns {Promise<UserDocument>} or throws an error
+   * @returns {Promise<User>} or throws an error
    * @memberof UsersService
    */
-  async create(createUserInput: any): Promise<UserDocument> {
+  async create(createUserInput: any): Promise<User> {
     const createdUser = new this.userModel(createUserInput);
 
-    let user: UserDocument | undefined;
+    let user: User | undefined;
     try {
       user = await createdUser.save();
     } catch (error) {
@@ -244,10 +245,10 @@ export class UsersService {
    * Returns a user by their unique email address or undefined
    *
    * @param {string} email address of user, not case sensitive
-   * @returns {(Promise<UserDocument | undefined>)}
+   * @returns {(Promise<User | undefined>)}
    * @memberof UsersService
    */
-  async findOneByEmail(email: string): Promise<UserDocument | undefined> {
+  async findOneByEmail(email: string): Promise<User | undefined> {
     const user = await this.userModel
       .findOne({ lowercaseEmail: email.toLowerCase() })
       .exec();
@@ -259,10 +260,10 @@ export class UsersService {
    * Returns a user by their unique username or undefined
    *
    * @param {string} username of user, not case sensitive
-   * @returns {(Promise<UserDocument | undefined>)}
+   * @returns {(Promise<User | undefined>)}
    * @memberof UsersService
    */
-  async findOneByUsername(username: string): Promise<UserDocument | undefined> {
+  async findOneByUsername(username: string): Promise<User | undefined> {
     const user = await this.userModel
       .findOne({ lowercaseUsername: username.toLowerCase() })
       .exec();
@@ -273,10 +274,10 @@ export class UsersService {
   /**
    * Gets all the users that are registered
    *
-   * @returns {Promise<UserDocument[]>}
+   * @returns {Promise<User[]>}
    * @memberof UsersService
    */
-  async getAllUsers(): Promise<UserDocument[]> {
+  async getAllUsers(): Promise<User[]> {
     const users = await this.userModel.find().exec();
     return users;
   }

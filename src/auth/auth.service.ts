@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { UserDocument } from '../users/schemas/user.schema';
+import { User } from '../users/models/users.model';
 import { ConfigService } from '../config/config.service';
 
 @Injectable()
@@ -27,7 +28,7 @@ export class AuthService {
     loginAttempt,
   ): Promise<any | undefined> {
     // This will be used for the initial login
-    let userToAttempt: UserDocument | undefined;
+    let userToAttempt: User | undefined;
     if (loginAttempt.email) {
       userToAttempt = await this.usersService.findOneByEmail(
         loginAttempt.email,
@@ -47,7 +48,7 @@ export class AuthService {
     // Check the supplied password against the hash stored for this email address
     let isMatch = false;
     try {
-      isMatch = await userToAttempt.checkPassword(loginAttempt.password);
+      // isMatch = await userToAttempt.checkPassword(loginAttempt.password);
     } catch (error) {
       return undefined;
     }
@@ -60,7 +61,7 @@ export class AuthService {
         token,
       };
       userToAttempt.lastSeenAt = new Date();
-      userToAttempt.save();
+      // userToAttempt.save();
       return result;
     }
 
@@ -71,19 +72,19 @@ export class AuthService {
    * Verifies that the JWT payload associated with a JWT is valid by making sure the user exists and is enabled
    *
    * @param {JwtPayload} payload
-   * @returns {(Promise<UserDocument | undefined>)} returns undefined if there is no user or the account is not enabled
+   * @returns {(Promise<User | undefined>)} returns undefined if there is no user or the account is not enabled
    * @memberof AuthService
    */
   async validateJwtPayload(
     payload: JwtPayload,
-  ): Promise<UserDocument | undefined> {
+  ): Promise<User | undefined> {
     // This will be used when the user has already logged in and has a JWT
     const user = await this.usersService.findOneByUsername(payload.username);
 
     // Ensure the user exists and their account isn't disabled
     if (user && user.enabled) {
       user.lastSeenAt = new Date();
-      user.save();
+      // user.save();
       return user;
     }
 
