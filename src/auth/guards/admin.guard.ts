@@ -1,24 +1,19 @@
-import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
-import { GqlExecutionContext } from '@nestjs/graphql';
+import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 
 import { UsersService } from '../../users/users.service';
-import { AuthenticationError } from 'apollo-server-core';
 
-// Check if username in field for query matches authenticated user's username
-// or if the user is admin
 @Injectable()
 export class AdminGuard implements CanActivate {
-  constructor(private usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const ctx = GqlExecutionContext.create(context);
-    const request = ctx.getContext().req;
+    const request = context.switchToHttp().getRequest();
 
     if (request.user) {
       const user = request.user;
       if (this.usersService.isAdmin(user.permissions)) return true;
     }
 
-    throw new AuthenticationError('Could not authenticate with token or user does not have permissions');
+    throw new ForbiddenException('Could not authenticate with token or user does not have permissions');
   }
 }

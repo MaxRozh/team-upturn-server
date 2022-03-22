@@ -1,123 +1,87 @@
-import { Injectable, forwardRef, Inject } from '@nestjs/common';
+import { Injectable, forwardRef, Inject, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import { compare, genSalt, hash } from 'bcrypt';
+import { ModelType } from '@typegoose/typegoose/lib/types';
+import { InjectModel } from 'nestjs-typegoose';
 
 import { UsersService } from '../users/users.service';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
-import { UserDocument } from '../users/schemas/user.schema';
-import { User } from '../users/models/users.model';
-import { ConfigService } from '../config/config.service';
+import { UserModel } from '../users/models/users.model';
+import { AuthDto } from './dto/auth.dto';
+import { USER_NOT_FOUND_ERROR, USER_WRONG_PASS_ERROR } from './auth.constants';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @Inject(forwardRef(() => UsersService))
-    private usersService: UsersService,
-    private jwtService: JwtService,
-    private configService: ConfigService,
+    @Inject(forwardRef(() => UsersService)) private readonly usersService: UsersService,
+    // @InjectModel(UserModel) private readonly userModel: ModelType<UserModel>,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService
   ) {}
 
-  /**
-   * Checks if a user's password is valid
-   *
-   * @param {LoginUserInput} loginAttempt Include username or email. If both are provided only
-   * username will be used. Password must be provided.
-   * @returns {(Promise<LoginResult | undefined>)} returns the User and token if successful, undefined if not
-   * @memberof AuthService
-   */
-  async validateUserByPassword(
-    loginAttempt,
-  ): Promise<any | undefined> {
-    // This will be used for the initial login
-    let userToAttempt: User | undefined;
-    if (loginAttempt.email) {
-      userToAttempt = await this.usersService.findOneByEmail(
-        loginAttempt.email,
-      );
-    } else if (loginAttempt.username) {
-      userToAttempt = await this.usersService.findOneByUsername(
-        loginAttempt.username,
-      );
-    }
+  async validateJwtPayload(payload: JwtPayload): Promise<UserModel | undefined> {
+    const user = await this.usersService.findOneByNickname(payload.nickname);
 
-    // If the user is not enabled, disable log in - the token wouldn't work anyways
-    if (userToAttempt && userToAttempt.enabled === false)
-      userToAttempt = undefined;
-
-    if (!userToAttempt) return undefined;
-
-    // Check the supplied password against the hash stored for this email address
-    let isMatch = false;
-    try {
-      // isMatch = await userToAttempt.checkPassword(loginAttempt.password);
-    } catch (error) {
-      return undefined;
-    }
-
-    if (isMatch) {
-      // If there is a successful match, generate a JWT for the user
-      const token = this.createJwt(userToAttempt!).token;
-      const result = {
-        user: userToAttempt!,
-        token,
-      };
-      userToAttempt.lastSeenAt = new Date();
-      // userToAttempt.save();
-      return result;
-    }
-
-    return undefined;
-  }
-
-  /**
-   * Verifies that the JWT payload associated with a JWT is valid by making sure the user exists and is enabled
-   *
-   * @param {JwtPayload} payload
-   * @returns {(Promise<User | undefined>)} returns undefined if there is no user or the account is not enabled
-   * @memberof AuthService
-   */
-  async validateJwtPayload(
-    payload: JwtPayload,
-  ): Promise<User | undefined> {
-    // This will be used when the user has already logged in and has a JWT
-    const user = await this.usersService.findOneByUsername(payload.username);
-
-    // Ensure the user exists and their account isn't disabled
-    if (user && user.enabled) {
+    if (user?.enabled) {
       user.lastSeenAt = new Date();
       // user.save();
       return user;
     }
-
-    return undefined;
   }
 
-  /**
-   * Creates a JwtPayload for the given User
-   *
-   * @param {User} user
-   * @returns {{ data: JwtPayload; token: string }} The data contains the email, username, and expiration of the
-   * token depending on the environment variable. Expiration could be undefined if there is none set. token is the
-   * token created by signing the data.
-   * @memberof AuthService
-   */
   createJwt(user: any): { data: JwtPayload; token: string } {
-    const expiresIn = this.configService.jwtExpiresIn;
+    const expiresIn = this.configService.get('JWT_EXPIRES_IN');
     let expiration: Date | undefined;
+
     if (expiresIn) {
       expiration = new Date();
       expiration.setTime(expiration.getTime() + expiresIn * 1000);
     }
     const data: JwtPayload = {
       email: user.email,
-      username: user.username,
-      expiration,
+      nickname: user.nickname,
+      expiration
     };
-
-    const jwt = this.jwtService.sign(data);
 
     return {
       data,
-      token: jwt,
+      token: this.jwtService.sign(data)
+    };
+  }
+
+  async createUser(dto: AuthDto) {
+    const salt = await genSalt(10);
+    // const newUser = new this.userModel({
+    //   email: dto.login,
+    //   passwordHash: await hash(dto.password, salt)
+    // });
+
+    // return newUser.save();
+  }
+
+  async findUser(email: string) {
+    // return this.userModel.findOne({ email }).exec();
+    return { passwordHash: '', email: '' };
+  }
+
+  async validateUser(email: string, password: string): Promise<Pick<UserModel, 'email'>> {
+    const user = await this.findUser(email);
+    if (!user) {
+      throw new UnauthorizedException(USER_NOT_FOUND_ERROR);
+    }
+
+    const isCorrectPassword = compare(password, user.passwordHash);
+    if (!isCorrectPassword) {
+      throw new UnauthorizedException(USER_WRONG_PASS_ERROR);
+    }
+
+    return { email: user.email };
+  }
+
+  async login(email: string) {
+    return {
+      access_token: await this.jwtService.signAsync({ email })
     };
   }
 }

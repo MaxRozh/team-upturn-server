@@ -1,22 +1,27 @@
 import { Module, forwardRef } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
+import { ConfigModule } from '@nestjs/config';
+import { TypegooseModule } from 'nestjs-typegoose';
 
 import { UsersService } from './users.service';
-import { UserSchema } from './schemas/user.schema';
-import { UserResolver } from './users.resolvers';
-import { DateScalar } from '../scalars/date.scalar';
-import { ConfigModule } from '../config/config.module';
 import { AuthModule } from '../auth/auth.module';
-import { ObjectIdScalar } from '../scalars/object-id.scalar';
+import { UsersController } from './users.controller';
+import { UserModel } from './models/users.model';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: 'User', schema: UserSchema }]),
+    TypegooseModule.forFeature([
+      {
+        typegooseClass: UserModel,
+        schemaOptions: {
+          collection: 'User'
+        }
+      }
+    ]),
     ConfigModule,
-    forwardRef(() => AuthModule),
+    forwardRef(() => AuthModule)
   ],
   exports: [UsersService],
-  controllers: [],
-  providers: [UsersService, UserResolver, DateScalar, ObjectIdScalar],
+  controllers: [UsersController],
+  providers: [UsersService]
 })
 export class UsersModule {}

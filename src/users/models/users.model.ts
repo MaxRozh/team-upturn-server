@@ -1,85 +1,82 @@
-import { Field, ID, ObjectType, InputType } from '@nestjs/graphql';
+import { prop } from '@typegoose/typegoose';
+import { TimeStamps, Base } from '@typegoose/typegoose/lib/defaultClasses';
 
-@InputType({ description: 'User' })
-export class User {
-  @Field(type => ID)
-  _id: number;
+class PasswordReset {
+  @prop()
+  token: string;
 
-  @Field()
-  username: string;
+  @prop()
+  expiration: Date;
+}
 
-  @Field()
+export interface UserModel extends Base {}
+export class UserModel extends TimeStamps {
+  @prop()
+  name: string;
+
+  @prop()
+  nickname: string;
+
+  @prop({ required: true })
   email: string;
 
-  @Field(type => [String])
-  permissions: Array<string>;
+  @prop({ type: () => String })
+  permissions: string[];
 
-  @Field()
-  createdAt: Date;
-
-  @Field()
-  updatedAt: Date;
-
-  @Field()
+  @prop()
   lastSeenAt: Date;
 
-  @Field()
+  @prop({ default: false })
   enabled: boolean;
+
+  @prop({ required: true })
+  passwordHash: string;
+
+  // @prop()
+  // company: string;
+
+  @prop()
+  role: string;
+
+  @prop()
+  avatar: string;
+
+  @prop({ type: () => PasswordReset })
+  passwordReset: PasswordReset;
+
+  // @prop()
+  // team: string;
+
+  // @prop()
+  // workPath: string[];
 }
 
-@InputType({ description: 'CreateUserInput' })
 export class CreateUserInput {
-  @Field()
-  username: string;
+  @prop()
+  nickname: string;
 
-  @Field()
+  @prop()
   email: string;
 
-  @Field()
-  password: string;
+  @prop()
+  passwordHash: string;
 }
 
-@InputType({ description: 'UpdatePasswordInput' })
 export class UpdatePasswordInput {
-  @Field()
+  @prop()
   oldPassword: string;
 
-  @Field()
+  @prop()
   newPassword: string;
 }
 
-@InputType({ description: 'UpdateUserInput' })
 export class UpdateUserInput {
-  @Field()
-  username: string;
+  @prop()
+  nickname: string;
 
-  @Field()
+  @prop()
   email: string;
 
-  @Field()
-  password: UpdatePasswordInput;
+  @prop()
+  passwordHash: UpdatePasswordInput;
 }
-
-// type Query {
-//   users: [User!]!
-//   user(username: String, email: String): User!
-//   forgotPassword(email: String): Boolean
-// }
-//
-// type Mutation {
-//   createUser(createUserInput: CreateUserInput): User!
-//   updateUser(fieldsToUpdate: UpdateUserInput!, username: String): User!
-//   addAdminPermission(username: String!): User!
-//   removeAdminPermission(username: String!): User!
-//   resetPassword(username: String!, code: String!, password: String!): User!
-// }
-//
-// input  {
-//   password: UpdatePasswordInput
-//   enabled: Boolean
-// }
-//
-// input UpdatePasswordInput {
-//   oldPassword: String!
-//   newPassword: String!
-// }

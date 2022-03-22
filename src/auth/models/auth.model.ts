@@ -1,43 +1,22 @@
-import { Field, ID, ObjectType, InputType } from '@nestjs/graphql';
-import { User } from '../../users/models/users.model';
+import { prop } from '@typegoose/typegoose';
 
-// @ObjectType({ description: 'Query' })
-// export class Query {
-//   @Field()
-//   login(user: LoginUserInput): LoginResult;
-//
-//   @Field()
-//   token: string;
-// }
-
-@ObjectType({ description: 'LoginResult' })
 export class LoginResult {
-  @Field(type => ID)
-  user: User;
-
-  @Field()
+  @prop()
   token: string;
 }
 
-@ObjectType({ description: 'RefreshToken' })
 export class RefreshToken {
-  @Field()
+  @prop()
   refreshToken: string;
 }
 
-@InputType()
 export class LoginUserInput {
-  @Field()
-  username: string;
+  @prop()
+  nickname: string;
 
-  @Field()
+  @prop()
   email: string;
 
-  @Field()
+  @prop()
   password: string;
 }
-
-// type Query {
-//   login(user: LoginUserInput!): LoginResult!
-//   refreshToken: String!
-// }
