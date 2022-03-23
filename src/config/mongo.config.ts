@@ -14,7 +14,7 @@ export const getMongoConfig = async (configService: ConfigService): Promise<Type
     // uri: getMongoString(configService),
     uri: configService.get('MONGO_URI'),
     useNewUrlParser: true,
-    useUnifiedTopology: true,
+    useUnifiedTopology: true
   };
 };
 

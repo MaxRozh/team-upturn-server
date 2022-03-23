@@ -1,4 +1,4 @@
-import {BadRequestException, Injectable} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { MongoError } from 'mongodb';
 import { createTransport, SendMailOptions } from 'nodemailer';
