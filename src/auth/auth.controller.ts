@@ -2,22 +2,23 @@ import { BadRequestException, Body, Controller, HttpCode, Post, UsePipes, Valida
 
 import { AuthDto } from './dto/auth.dto';
 import { AuthService } from './auth.service';
+import { UsersService } from '../users/users.service';
 import { ALREADY_REGISTER_ERROR } from './auth.constants';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService, private readonly usersService: UsersService) {}
 
   @UsePipes(new ValidationPipe())
   @Post('register')
   async register(@Body() dto: AuthDto) {
-    const existingUser = await this.authService.findUser(dto.login);
+    const existingUser = await this.usersService.findOneByEmail(dto.login);
 
     if (existingUser) {
       throw new BadRequestException(ALREADY_REGISTER_ERROR);
     }
 
-    return this.authService.createUser(dto);
+    return this.usersService.create(dto);
   }
 
   @UsePipes(new ValidationPipe())
