@@ -6,7 +6,8 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(new ValidationPipe());
 
-  await app.listen(3001);
+  app.setGlobalPrefix(':locale');
+  await app.listen(process.env.PORT);
 
   Logger.log(`Starting server`);
   Logger.log(`Application is running on: ${await app.getUrl()}`);
