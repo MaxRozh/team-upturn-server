@@ -6,7 +6,7 @@ import { compare } from 'bcrypt';
 import { UsersService } from '../users/users.service';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { UserModel } from '../users/models/users.model';
-import { USER_NOT_FOUND_ERROR, USER_WRONG_PASS_ERROR } from './auth.constants';
+import { ACCESS_TOKEN, USER_NOT_FOUND_ERROR, USER_WRONG_PASS_ERROR } from './auth.constants';
 
 @Injectable()
 export class AuthService {
@@ -60,7 +60,7 @@ export class AuthService {
 
   async login(email: string) {
     return {
-      access_token: await this.jwtService.signAsync({ email })
+      [ACCESS_TOKEN]: await this.jwtService.signAsync({ email })
     };
   }
 }

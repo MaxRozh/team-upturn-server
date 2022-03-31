@@ -4,9 +4,8 @@ import { TypegooseModule } from 'nestjs-typegoose';
 
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { getMongoConfig } from './config/mongo.config';
+import { RoleModule } from './role/role.module';
 
 @Module({
   imports: [
@@ -17,9 +16,8 @@ import { getMongoConfig } from './config/mongo.config';
       useFactory: getMongoConfig
     }),
     AuthModule,
-    UsersModule
-  ],
-  controllers: [AppController],
-  providers: [AppService]
+    UsersModule,
+    RoleModule
+  ]
 })
 export class AppModule {}

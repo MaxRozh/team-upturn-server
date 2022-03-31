@@ -8,7 +8,8 @@ import { genSalt, hash } from 'bcrypt';
 
 import { UserModel } from './models/users.model';
 import { AuthService } from '../auth/auth.service';
-import { AuthDto } from '../auth/dto/auth.dto';
+import { RegistrationDto } from '../auth/dto/auth.dto';
+import { UpdateUserDto } from './dto/users.dto';
 
 @Injectable()
 export class UsersService {
@@ -45,8 +46,8 @@ export class UsersService {
     return user;
   }
 
-  async update(nickname: string, fieldsToUpdate: any): Promise<any> {
-    const currentUser = await this.findOneByNickname(fieldsToUpdate.nickname);
+  async update(id: string, fieldsToUpdate: UpdateUserDto): Promise<any> {
+    const currentUser = await this.findOneById(id);
     const errors = [];
 
     if (!currentUser) {
@@ -67,7 +68,7 @@ export class UsersService {
       }
     }
 
-    return this.userModel.updateOne({ nickname }, { $set: fieldsToUpdate }, { new: true, runValidators: true });
+    return this.userModel.updateOne({ id }, { $set: fieldsToUpdate }, { new: true, runValidators: true });
   }
 
   async updateExistingUser(nickname: string, fieldsToUpdate: any): Promise<any> {
@@ -132,11 +133,13 @@ export class UsersService {
     return undefined;
   }
 
-  async create(dto: AuthDto): Promise<UserModel> {
+  async create(dto: RegistrationDto): Promise<UserModel> {
     const salt = await genSalt(10);
     let newUser = new this.userModel({
-      email: dto.login,
-      passwordHash: await hash(dto.password, salt)
+      name: dto.name,
+      email: dto.email,
+      passwordHash: await hash(dto.password, salt),
+      roles: [{ id: 1 }]
     });
 
     try {
@@ -156,6 +159,12 @@ export class UsersService {
 
   async findOneByNickname(nickname: string) {
     const user = await this.userModel.findOne({ lowercaseNickname: nickname.toLowerCase() }).exec();
+    if (user) return user;
+    return undefined;
+  }
+
+  async findOneById(id: string) {
+    const user = await this.userModel.findOne({ id }).exec();
     if (user) return user;
     return undefined;
   }

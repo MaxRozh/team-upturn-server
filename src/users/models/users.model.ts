@@ -1,5 +1,7 @@
-import { prop } from '@typegoose/typegoose';
+import { prop, Ref } from '@typegoose/typegoose';
 import { TimeStamps, Base } from '@typegoose/typegoose/lib/defaultClasses';
+
+import { RoleModel } from '../../role/role.model';
 
 class PasswordReset {
   @prop()
@@ -26,7 +28,7 @@ export class UserModel extends TimeStamps {
   @prop()
   lastSeenAt: Date;
 
-  @prop({ default: false })
+  @prop({ default: true })
   enabled: boolean;
 
   @prop({ required: true })
@@ -35,8 +37,8 @@ export class UserModel extends TimeStamps {
   // @prop()
   // company: string;
 
-  @prop()
-  role: string;
+  @prop({ ref: () => RoleModel, required: true })
+  roles: Ref<RoleModel>[];
 
   @prop()
   avatar: string;

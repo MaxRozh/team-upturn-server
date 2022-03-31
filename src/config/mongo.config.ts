@@ -2,9 +2,6 @@ import { ConfigService } from '@nestjs/config';
 import { TypegooseModuleOptions } from 'nestjs-typegoose';
 
 export const getMongoConfig = async (configService: ConfigService): Promise<TypegooseModuleOptions> => {
-  // `mongodb://${url}:27017?serverSelectionTimeoutMS=2000&authSource=admin`
-  // mongodb://myDBReader:D1fficultP%40ssw0rd@mongodb0.example.com:27017/?authSource=admin
-
   // if (configService.mongoAuthEnabled) {
   //   options.user = configService.mongoUser;
   //   options.pass = configService.mongoPassword;
