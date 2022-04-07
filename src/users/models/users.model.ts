@@ -31,11 +31,11 @@ export class UserModel extends TimeStamps {
   @prop({ default: true })
   enabled: boolean;
 
+  @prop()
+  position: string;
+
   @prop({ required: true })
   passwordHash: string;
-
-  // @prop()
-  // company: string;
 
   @prop({ ref: () => RoleModel, required: true })
   roles: Ref<RoleModel>[];
@@ -47,38 +47,11 @@ export class UserModel extends TimeStamps {
   passwordReset: PasswordReset;
 
   // @prop()
+  // company: string;
+
+  // @prop()
   // team: string;
 
   // @prop()
   // workPath: string[];
-}
-
-export class CreateUserInput {
-  @prop()
-  nickname: string;
-
-  @prop()
-  email: string;
-
-  @prop()
-  passwordHash: string;
-}
-
-export class UpdatePasswordInput {
-  @prop()
-  oldPassword: string;
-
-  @prop()
-  newPassword: string;
-}
-
-export class UpdateUserInput {
-  @prop()
-  nickname: string;
-
-  @prop()
-  email: string;
-
-  @prop()
-  passwordHash: UpdatePasswordInput;
 }

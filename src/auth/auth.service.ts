@@ -44,7 +44,7 @@ export class AuthService {
     };
   }
 
-  async validateUser(email: string, password: string): Promise<Pick<UserModel, 'email'>> {
+  async validateUser(email: string, password: string): Promise<{ id: string }> {
     const user = await this.usersService.findOneByEmail(email);
     if (!user) {
       throw new UnauthorizedException(USER_NOT_FOUND_ERROR);
@@ -55,12 +55,12 @@ export class AuthService {
       throw new UnauthorizedException(USER_WRONG_PASS_ERROR);
     }
 
-    return { email: user.email };
+    return { id: user._id.toString() };
   }
 
-  async login(email: string) {
+  async login(id: string) {
     return {
-      [ACCESS_TOKEN]: await this.jwtService.signAsync({ email })
+      [ACCESS_TOKEN]: await this.jwtService.signAsync({ id })
     };
   }
 }

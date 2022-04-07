@@ -139,7 +139,7 @@ export class UsersService {
       name: dto.name,
       email: dto.email,
       passwordHash: await hash(dto.password, salt),
-      roles: [{ id: 1 }]
+      roles: []
     });
 
     try {
@@ -152,7 +152,7 @@ export class UsersService {
   }
 
   async findOneByEmail(email: string) {
-    const user = await this.userModel.findOne({ lowercaseEmail: email.toLowerCase() }).exec();
+    const user = await this.userModel.findOne({ email }).exec();
     if (user) return user;
     return undefined;
   }
@@ -164,7 +164,7 @@ export class UsersService {
   }
 
   async findOneById(id: string) {
-    const user = await this.userModel.findOne({ id }).exec();
+    const user = await this.userModel.findOne({ _id: id }).exec();
     if (user) return user;
     return undefined;
   }
