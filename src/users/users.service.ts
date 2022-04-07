@@ -1,13 +1,15 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { randomBytes } from 'crypto';
-import { MongoError } from 'mongodb';
 import { createTransport, SendMailOptions } from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from 'nestjs-typegoose';
 import { ModelType } from '@typegoose/typegoose/lib/types';
+import { genSalt, hash } from 'bcrypt';
 
 import { UserModel } from './models/users.model';
 import { AuthService } from '../auth/auth.service';
+import { RegistrationDto } from '../auth/dto/auth.dto';
+import { UpdateUserDto } from './dto/users.dto';
 
 @Injectable()
 export class UsersService {
@@ -28,7 +30,7 @@ export class UsersService {
     if (user.permissions.includes(permission)) return user;
 
     user.permissions.push(permission);
-    // await user.save();
+    await user.save();
 
     return user;
   }
@@ -39,13 +41,13 @@ export class UsersService {
     if (!user) return undefined;
 
     user.permissions = user.permissions.filter((userPermission) => userPermission !== permission);
-    // await user.save();
+    await user.save();
 
     return user;
   }
 
-  async update(nickname: string, fieldsToUpdate: any): Promise<UserModel | undefined> {
-    const currentUser = await this.findOneByNickname(fieldsToUpdate.nickname);
+  async update(id: string, fieldsToUpdate: UpdateUserDto): Promise<any> {
+    const currentUser = await this.findOneById(id);
     const errors = [];
 
     if (!currentUser) {
@@ -66,7 +68,10 @@ export class UsersService {
       }
     }
 
-    // @ts-ignore
+    return this.userModel.updateOne({ id }, { $set: fieldsToUpdate }, { new: true, runValidators: true });
+  }
+
+  async updateExistingUser(nickname: string, fieldsToUpdate: any): Promise<any> {
     return this.userModel.updateOne({ nickname }, { $set: fieldsToUpdate }, { new: true, runValidators: true });
   }
 
@@ -107,10 +112,10 @@ export class UsersService {
           expiration
         };
 
-        // user.save().then(
-        //   () => resolve(true),
-        //   () => resolve(false)
-        // );
+        user.save().then(
+          () => resolve(true),
+          () => resolve(false)
+        );
       });
     });
   }
@@ -121,34 +126,45 @@ export class UsersService {
       if (user.passwordReset.token === code) {
         user.passwordHash = password;
         user.passwordReset = undefined;
-        // await user.save();
+        await user.save();
         return user;
       }
     }
     return undefined;
   }
 
-  async create(createUserInput: any): Promise<UserModel> {
-    const createdUser = new this.userModel(createUserInput);
-    let user: UserModel | undefined;
+  async create(dto: RegistrationDto): Promise<UserModel> {
+    const salt = await genSalt(10);
+    let newUser = new this.userModel({
+      name: dto.name,
+      email: dto.email,
+      passwordHash: await hash(dto.password, salt),
+      roles: []
+    });
 
     try {
-      user = await createdUser.save();
+      newUser = await newUser.save();
     } catch (error) {
       throw new BadRequestException('Not valid fields');
     }
 
-    return user;
+    return newUser.save();
   }
 
-  async findOneByEmail(email: string): Promise<UserModel | undefined> {
-    const user = await this.userModel.findOne({ lowercaseEmail: email.toLowerCase() }).exec();
+  async findOneByEmail(email: string) {
+    const user = await this.userModel.findOne({ email }).exec();
     if (user) return user;
     return undefined;
   }
 
-  async findOneByNickname(nickname: string): Promise<UserModel | undefined> {
+  async findOneByNickname(nickname: string) {
     const user = await this.userModel.findOne({ lowercaseNickname: nickname.toLowerCase() }).exec();
+    if (user) return user;
+    return undefined;
+  }
+
+  async findOneById(id: string) {
+    const user = await this.userModel.findOne({ _id: id }).exec();
     if (user) return user;
     return undefined;
   }
